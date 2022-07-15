@@ -74,7 +74,102 @@ The status will change to connecting. This will take a bit of time to complete, 
 ![Untitled](https://user-images.githubusercontent.com/99374038/179141645-e66642a8-58fe-423d-9353-fe736fe239e7.png)  
 
 # Azure Sentinel 
-Sentinel will be used for visualizing the geolocational data from the Log Analytics Workspace. It can be found by searching for Azure Sentinel in the search bar. In the middle of the page will be a button for creating an Azure Sentinel. In the page is the Log Analytics workspace that was made, which will be clicked. 
+Sentinel will be used for visualizing the geolocational data from the Log Analytics Workspace. It can be found by searching for Azure Sentinel in the search bar. In the middle of the page will be a button for creating an Azure Sentinel. On the following page is the Log Analytics workspace that was made, which will be clicked, and then the add button pressed to start the process of connecting the two together. In the meantime whilst the connection is taking place, we can get information from the VM on Azure for us to connect to it with. 
+
+# Remotely Logging Into the VM 
+Return to the virtual machines settings page, and click on the VM that was created earlier. In here, you can find a number of property values of the VM, but the one we want is the IP address of the machine:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179311470-aec2dbe0-516a-4f4c-9fb3-30b4aadd5254.png)  
+With the IP address, you can open up the Remote Desktop Connection application:  
+![image](https://user-images.githubusercontent.com/99374038/179311591-95c101a5-b668-48aa-af97-859e1e728fbf.png)  
+You can change the display settings so that the resolution is lower than your monitors resolution to stop the VM from taking up all of your screens real estate, but if you don't mind that, then you can enter the IP address of the machine into the Computer field, and press the connect button:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179311802-cc34ea1e-e659-46e0-be78-6bb640f83538.png)  
+You will get a new sub window that will have blue text saying "More choices," which, when clicked, will allow you to use a different account, which is what we need to connect to the VM. Both the username and password credentials for logging into the VM are what you had set when first creating the virtual machine, so enter those values. I suggest entering the login information incorrectly at least once so you can see the failed login within the Event Viewer application inside of the VM. Event Viewer, and the failed audits for wrong username or bad passwords is what the heat map will be generated from, so this gives you a pre-emptive chance to see what those audit entries will look like. Either way, you will be given a certificate warning that you can agree to. At this point, the remainder of logging into the VM is clicking through settings, and waiting until you are presented the desktop. The settings are optional, you can opt in or not, it won't affect the lab. When you see the desktop, you should note the blue banner at the top of the screen that has the IP address of the VM on it. If you want to ensure you are using your VM and not your host machine, hover your mouse over the top middle of the screen to ensure the banner appears. 
+
+# Finalizing the VM 
+Inside of the VM we will be altering the Windows Defender settings, using Event Viewer, and creating a log file, but this will be done by the PowerShell script found in this repository. 
+
+## Disabling the Firewall
+We want the VM to be as easily discoverable as possible, so the built-in protection that the VM offers needs to be disabled. You want to search for the Windows Defender Firewall:  
+![image](https://user-images.githubusercontent.com/99374038/179314152-8af0b836-61b4-4d7d-a5ac-0f149f90256a.png)  
+There is text that can be clicked for viewing the Windows Defender Firewall properties, which we will need:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179314252-2bf84b9c-170b-4b05-8b3b-f856b08f2439.png)  
+In here, the Firewall State needs to be turned off for the Domain Profile, Private Profile, and Public Profile:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179314414-e264fe1e-05fb-4509-9769-bfd2e5fd8227.png)  
+To test that the settings have left the VM sufficiently vulnerable, you can ping the VM from your host machine. If the pings are going through, then the VM is made vulnerable:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179314792-55ca12d2-9a2c-4db4-b44c-9a1b0dbc9fe1.png)  
+The earlier pings failed because the firewall was blocking them, but they began to go through after being disabled. You can use the *-t* option at the end of your ping to keep the ping running perpetually. 
+
+## Reviewing Audit Logs in Event Viewer
+Search for the Event Viewer application in Windows:  
+![image](https://user-images.githubusercontent.com/99374038/179313011-ae24f618-339b-4620-928c-e60d41016478.png)  
+Inside of Event Viewer, you want to click on Windows Logs, and then Security to find the category of logs we want. The ones we are interested in are the ones defined with the ID of 4625:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179313141-16283d6a-13e0-492b-b7da-d7d4deb324f2.png)  
+These logs are for failed audits that will contain an IP address in them, found below the list of audit logs in the Event Viewer window. These IP addresses can be fed to a site like https://ipgeolocation.io/, which we will be using to get the geolocational data of the IP, such as the longitude, latitude, and country of the connecting IP. These pieces of data will be used for the visualization by Sentinel after being parsed by a trained Log Analytics Workspace. 
+
+## Getting the PowerShell Script on the VM 
+You can use Edge to browse to this repository and download the script file. Alternatively, if there is a protection warning that comes up that blocks the download, you can click on the script file to see the code, and copy it. If you copied the code, you can open up PowerShell ISE, and paste the code in there:  
+![image](https://user-images.githubusercontent.com/99374038/179315189-afbc77f7-e857-4a27-8e27-19e5cdb9f319.png)  
+I suggest saving the pasted code as a *.ps1* file on the desktop so it is always readily available if needed. 
+
+## Getting Your API Key for Geolocation
+The API key that is in the file is the one that I had, so you will want your own. To get that, you will navigate to https://ipgeolocation.io/, and sign up for an account. After signing up, you can verify your account via email and log in to see your API key:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179315944-473b0b50-53c5-4fbc-9d20-a10b76e051ab.png)  
+You should see a value for Consumed API Requests out of 1000, as well. This tracks the total daily number of requests made, which is capped off at 1000. You can get more, but it will cost you some money to do so. It's up to your whether or not that is worth it. Either way, with your own API key copied, you should change the API key value at the top of the PowerShell script to your own, and then save the file. 
+
+## Running the Script
+The script will go into Event Viewer and grab the IP address listed for any audit entry that has an ID of 4625. This IP address is then fed into https://ipgeolocation.io/ to get the geolocation of the IP, which is then written into a log file. This log filed is located in C:\ProgramData\, and has the name failed_rdp.log. This means the absolute path of the log is C:\ProgramData\failed_rdp.log. When the script is run, if you had intentionally failed to log in with Remote Desktop Connection, you should see some purple text at the bottom of PowerShell ISE. These lines contain the data that will be found inside of the log file, which are successfully found logs with an ID of 4625. You can check this by leaving the script running in the VM, and then failing to log into the VM again from your host machine. A new entry should appear at the bottom in the terminal. If you navigate to and open the log file itself, you should see more entries than there were at the bottom of PowerShell ISE. All preceding entries in the log are samples created automatically. These samples can be identified by their destination host value being listed as sampledata. You want to keep these because they will be used to train the Log Analytics Workspace to automate the data parsing. To avoid the sample data from affecting the heat map, they will be excluded, which will happen later. 
+
+# Creating Custom Logs
+Back on the host machine, you want to navigate back to the Log Analytics Workspace. Inside the created workspace, there is a setting for Custom Logs:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179317640-1fd131d1-8c50-4dfd-bdd0-b95733d82d78.png)  
+There should be a button in the middle of the screen for adding a custom log, which you will need to click. 
+
+## Sample
+You will be prompted to give a sample log file, but the log file exists inside of the virtual machine. To get that data, you will need to go to C:\ProgramData\failed_rdp.log on your VM, copy the contents of the log file, and then paste it into a Notepad file in your host machine with the extension *.log*. This local log file can be given to fed in as the sample log:  
+![image](https://user-images.githubusercontent.com/99374038/179317928-a5da88b2-9b3f-4576-9657-2e6a701b6f0e.png)  
+
+## Record Delimiter 
+Clicking next will present you with a preview of the log files contents:  
+![image](https://user-images.githubusercontent.com/99374038/179317994-e97475c3-c9d0-4fbb-82b0-3e201d93784b.png)  
+It should look the same, but it's always good to give things a once over to ensure everything is in working order. Once your are done reviewing, click next. 
+
+## Collection Paths 
+This is where we tell the custom log the location of the log file inside of the VM. We will want to select the file system type, which is Windows, and the path of the log file, which is C:\ProgramData\failed_rdp.log:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179318633-b1d512a0-0d24-44a4-a8c2-98825b37692b.png)  
+Give the path a look over to make sure it is correct or else the log file will not be located properly, and then click next. 
+
+## Details
+You can give the custom log whatever name you want to, and the details are optional. Click next to go to the review + create page, and then, finally, click create. The custom log is created.  
+
+You should see a screen that has the name of your custom log. It will take time for Log Analytics Workspace to sync with the VM are start gathering the log data from the VM. Under the General settings, you can find an option for Logs:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179319026-aaefd952-490c-4455-b009-19a13017bf78.png)  
+You can run a query here that will be the name of the custom log you gave earlier. It is likely that the return value for the query will be nothing:  
+![image](https://user-images.githubusercontent.com/99374038/179319174-b5d9d9b9-7da3-4e84-8ee5-f6a4572586ef.png)  
+Instead, you can run the query *SecurityEvent* to see all of the security events that were logged inside of Event Viewer to see if some progress has been made:  
+![image](https://user-images.githubusercontent.com/99374038/179319315-d99794c9-2d80-46d2-8cf0-7ab3aa009090.png)  
+This confirms that the VM can be seen and looked at by Log Analytics Workspace, but it still needs time to sync up. 
+
+# Training Log Analytics Workspace 
+After time has passed, and running a query on the custom log returns all of the VMs log data correctly, we can begin training. Clicking on the right arrow next to the timestamp of a log will expand the details of it. The first thing listed is an ellipses that gives the option to extract fields from the raw data:  
+![image](https://user-images.githubusercontent.com/99374038/179320118-5c14db0d-267d-4fbe-b163-18ffc425616c.png)  
+To do the training, you need to highlight the value for field, such as the value that comes after the colon for latitude:  
+![image](https://user-images.githubusercontent.com/99374038/179320425-759dd6da-6c25-4ba6-8ad6-5f99e1e82a64.png)  
+A sub window will appear where you will name the custom field, and select the data type of the entry:  
+![image](https://user-images.githubusercontent.com/99374038/179320510-99fd694c-f3fb-4043-80f0-561a59e9face.png)  
+The sample data and real data that was imported to the custom log will now try and use a search to find all of the latitude data for you:  
+![image](https://user-images.githubusercontent.com/99374038/179320610-a1b12db7-d0e9-462d-a4af-9b31c0da478c.png)  
+In my instance, the data was correctly identified for me in all log entries, so the save extraction button can be pressed; however, clicking to extract data from the same log entry, the search results for longitude for me had incorrect entries:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179321016-fbfd0667-0bcc-4e16-aa46-e84046e5b065.png)    
+When this happens, they need to be fixed manually. This is done by clicking on the icon to the right of the search result, and selecting to modify the highlight:  
+![image](https://user-images.githubusercontent.com/99374038/179321132-e52218f8-4724-446a-85f9-d54d1869a83f.png)  
+A new section will be opened on the screen where you can highlight the correct value, and then re-enter the name and data type for it:  
+![image](https://user-images.githubusercontent.com/99374038/179321192-6dd53f43-8232-4845-b9f6-1d0f2c92be33.png)  
+Clicking the Ok button should fix that entry, and hopefully others, but depending on the number of mismatched fields, you will need to continue checking each entry to ensure the correct data is being parsed for the custom field.
+
+This is the repetitive part, but you will need to go through each field and do this same training process. You can keep using the same log entry over and over for each custom field you make, but you need to ensure the data is correctly parsed or else this will negatively affect Sentinels performance. If you don't want to parse each field, you can, alternatively, only parse the longitude, latitude, and country, but I believe it's best to be thorough, even if it isn't required. For optimal results, go through each field. Once that is done, you have successfully trained Log Analytics Workspace to parse the formatting structure of the log file inside of the VM, that it will automatically read for you. It will take some time for Log Analytics Workspace to fill in the fields for you, so you'll need to wait. Before the custom fields are populated, you can test the accuracy of the training by intentionally failing to log in via Remote Desktop Connection to the VM. This will create a new log entry which can be used to ensure the segments of data are placed under the correct custom field. If something is wrong, you can use the new log entry for further training. If everything is fine, we can move on to setting up Sentintel. 
+
+# Azure Sentinel 
+
 
 # Deleting Resource Groups
 If the resource group is not deleted, it will eat up the free credits and you will be charged. To prevent this you can search for resource groups, and click on the one that was made for this lab. 
