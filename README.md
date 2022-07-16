@@ -2,7 +2,11 @@
 
 # Forewords 
 The goal of this lab is to utilize Azure Virtual Machine as a honeypot, and Azure Sentinel, and Azure Log Analytics Workspace to collect log information that will be used to create a heatmap that will display the geolocation of where potential attackers are. This is a way to get SIEM exposure and understanding without paying for software. The end result of this lab will look like this in Azure Sentinel:  
-![image](https://user-images.githubusercontent.com/99374038/179326634-e7a2f931-76dd-4fdf-9ac2-3fc2b441d7a3.png)    
+![image](https://user-images.githubusercontent.com/99374038/179326634-e7a2f931-76dd-4fdf-9ac2-3fc2b441d7a3.png)  
+This is a rough diagram that shows what will be happening:  
+![image](https://user-images.githubusercontent.com/99374038/179328292-76b58a48-d691-4266-b5eb-77793fa50be9.png)  
+You will be using the Azure environment to create a cloud-based virtual machine. This machine will run a script that collects failed login attempts, gets the IP from the audit log, feeds that into a website via API key to get location data, and then writes all of this information into a log file. This log file will be given to Log Analytics Workspace to be trained with, to then will automate the data parsing for you. The parsed data will be displayed via Sentinel over a map that shows where the login attempt was made from geographically. The more connection attempts from a location, the greater the indication on the map is for that region. 
+
 There are some things to know before starting this lab:
 - An Azure account and credit card are required. This lab utilizes the $200 worth of free credits an Azure account is given to avoid being charged, and the labs resources will be deleted afterwards to prevent any charges, so you don't have to worry about paying anything. 
 - The PowerShell script and the idea for this lab are not mine. The source of this project, and the script file can be found on Josh Madakor's GitHub page (https://github.com/joshmadakor1/Sentinel-Lab). 
