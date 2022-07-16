@@ -1,7 +1,7 @@
 # Azure Siem Home Lab Tutorial 
 
 # Forewords 
-The goal of this lab is to utilize Azure Virual Machine as a honeypot, and Azure Sentinel, and Azure Log Analytics Workspace to collect log information that will be used to create a heatmap that will display the geolocation of where potential attackers are. This is a way to get SIEM exposure and understanding without paying for software. The end result of this lab will look like this in Azure Sentinel:  
+The goal of this lab is to utilize Azure Virtual Machine as a honeypot, and Azure Sentinel, and Azure Log Analytics Workspace to collect log information that will be used to create a heatmap that will display the geolocation of where potential attackers are. This is a way to get SIEM exposure and understanding without paying for software. The end result of this lab will look like this in Azure Sentinel:  
 ![image](https://user-images.githubusercontent.com/99374038/179326634-e7a2f931-76dd-4fdf-9ac2-3fc2b441d7a3.png)    
 There are some things to know before starting this lab:
 - An Azure account and credit card are required. This lab utilizes the $200 worth of free credits an Azure account is given to avoid being charged, and the labs resources will be deleted afterwards to prevent any charges, so you don't have to worry about paying anything. 
@@ -25,16 +25,16 @@ In the top left part of the settings page there is an option to create a virtual
 ## Basics
 You will now need to give the appropriate settings to the VM, but first you will need to make a resource group. This is a grouping of all of the Azure tools and software under one umbrella. This means that deleting the resource group will delete the VM, the log analytics workspace, Sentinel, and all of their configurations. This will be done at the end to avoid any billing, but that will come in time. You'll need to click to create a new resource group, and then give it a name:  
 ![Untitled](https://user-images.githubusercontent.com/99374038/179133419-a4c24600-b44c-451a-8255-d7e4401976cd.png)  
-Next is to name the VM and specify which regional data centre it will be running from. The name can be whatever you want, but the region should be one that is accessible to you. While doing this lab, I did find that some regions would give me issues. If that occurs, then just choose a similar one. For me, US West 2 and US West 3 worked:  
+Next is to name the VM and specify which regional data center it will be running from. The name can be whatever you want, but the region should be one that is accessible to you. While doing this lab, I did find that some regions would give me issues. If that occurs, then just choose a similar one. For me, US West 2 and US West 3 worked:  
 ![image](https://user-images.githubusercontent.com/99374038/179133703-d3a093ad-f507-4923-b1ff-7dd03548606d.png)  
-Under the administator account section, give a name and password to the VM that you will remember. When you use Remote Desktop to get access to the VM, you will need these credentials. I suggest putting them in a Notepad file. Do not use simple passwords, because this VM is a honeypot, you can expect thousands of potential connections that may try and use common passwords from files like RockYou.txt, or brute force, dictionary, or rainbow table attacks. Choose something unique to prevent this. Before moving on to the disk settings, click the checkbox for the multi-tenant licensing agreement to agree to it:  
+Under the administrator account section, give a name and password to the VM that you will remember. When you use Remote Desktop to get access to the VM, you will need these credentials. I suggest putting them in a Notepad file. Do not use simple passwords, because this VM is a honeypot, you can expect thousands of potential connections that may try and use common passwords from files like RockYou.txt, or brute force, dictionary, or rainbow table attacks. Choose something unique to prevent this. Before moving on to the disk settings, click the checkbox for the multi-tenant licensing agreement to agree to it:  
 ![image](https://user-images.githubusercontent.com/99374038/179134179-f648e625-e58d-426c-ba39-d2f6f53387b9.png)  
 In the disk settings, you can click next. There should be no changes required. 
 
 ## Networking 
 In here we will be altering the firewall settings. We want this VM to be a honeypot, so it has to be vulnerable and exposed to the internet. To do this, we will need to allow any and all inbound connections. To start, we will change the NIC network security group settings to Advanced, and then click to create a new set of configured policies:  
 ![Untitled](https://user-images.githubusercontent.com/99374038/179134656-b5d785a0-68cd-4ff1-85d5-fe80f72b7afc.png)  
-There should be one pre-made inbound polciy already in place. This needs to be removed, which can be done by using the ellipses on the far right side of it:  
+There should be one pre-made inbound policy already in place. This needs to be removed, which can be done by using the ellipses on the far-right side of it:  
 ![Untitled](https://user-images.githubusercontent.com/99374038/179134965-f92769d0-2871-42e0-8dd7-617ec01ebd97.png)  
 With the policy gone, we can make our own inbound rule:  
 ![image](https://user-images.githubusercontent.com/99374038/179135167-b670ab58-0457-4274-97f1-4b4c3521bf3f.png)  
@@ -47,7 +47,7 @@ Over time all of these resources will be have the status of created, which is wh
 While the honeypot is being created, we will move on and continue working on other parts of the lab. 
 
 # Creating the Log Analytics Workspace 
-The Log Analytics Workspace can be found using the search bar. This resource is used to ingest log data on the VM and inside of Event Viewer on the VM. Later on we will train the Log Analytics Workspace to parse log data correctly for us, which will automate a lot of mundane work moving forward. The log data will ultimately be used by Sentinel later for the heat map. For now, however, we will focus on creating the resource. In the middle of the screen is a button for creating a Log Analytics Workspace. Clicking on that will bring us to a brief settings page. On this page, we will change the resource group to be the one we made prior. Also, a name will be given to the instance, and a region selected. I suggest using the same region as before or one that works:  
+The Log Analytics Workspace can be found using the search bar. This resource is used to ingest log data on the VM and inside of Event Viewer on the VM. Later on, we will train the Log Analytics Workspace to parse log data correctly for us, which will automate a lot of mundane work moving forward. The log data will ultimately be used by Sentinel later for the heat map. For now, however, we will focus on creating the resource. In the middle of the screen is a button for creating a Log Analytics Workspace. Clicking on that will bring us to a brief settings page. On this page, we will change the resource group to be the one we made prior. Also, a name will be given to the instance, and a region selected. I suggest using the same region as before or one that works:  
 ![Untitled](https://user-images.githubusercontent.com/99374038/179136735-225f9e26-d896-406c-b45b-fe0abba39a27.png)  
 There is nothing more required for this, so click Ok, then the review + create button, then create. 
 
@@ -56,9 +56,9 @@ Just as before, this resource can be found by searching for it. The goal with it
 ![Untitled](https://user-images.githubusercontent.com/99374038/179137523-07520369-d52d-4690-be7b-f05dcb47cee2.png)  
 
 ## Azure Defender plans
-We want to enable Azure Defender, and disable the SQL servers on  machines:  
+We want to enable Azure Defender, and disable the SQL servers on machines:  
 ![Untitled](https://user-images.githubusercontent.com/99374038/179137970-8cb30049-7c4d-42cb-976e-17b5694842ef.png)  
-The SQL server is not needed, and will eat up the credits, so it's better to just turn it off. With that, the save button on the top left can be clicked, and then the 
+The SQL server is not needed, and will eat up the credits, so it's better to just turn it off. With that, the save button on the top left can be clicked.
 
 ## Data Collection 
 The Data Collection settings tab can be viewed. In here, we can set Security Center to store data on all security events that happen in the VM:  
@@ -74,14 +74,14 @@ The status will change to connecting. This will take a bit of time to complete, 
 ![Untitled](https://user-images.githubusercontent.com/99374038/179141645-e66642a8-58fe-423d-9353-fe736fe239e7.png)  
 
 # Azure Sentinel 
-Sentinel will be used for visualizing the geolocational data from the Log Analytics Workspace. It can be found by searching for Azure Sentinel in the search bar. In the middle of the page will be a button for creating an Azure Sentinel. On the following page is the Log Analytics workspace that was made, which will be clicked, and then the add button pressed to start the process of connecting the two together. In the meantime whilst the connection is taking place, we can get information from the VM on Azure for us to connect to it with. 
+Sentinel will be used for visualizing the geolocational data from the Log Analytics Workspace. It can be found by searching for Azure Sentinel in the search bar. In the middle of the page will be a button for creating an Azure Sentinel. On the following page is the Log Analytics workspace that was made, which will be clicked, and then the add button pressed to start the process of connecting the two together. In the meantime, whilst the connection is taking place, we can get information from the VM on Azure for us to connect to it with. 
 
 # Remotely Logging Into the VM 
-Return to the virtual machines settings page, and click on the VM that was created earlier. In here, you can find a number of property values of the VM, but the one we want is the IP address of the machine:  
+Return to the virtual machines' settings page, and click on the VM that was created earlier. In here, you can find a number of property values of the VM, but the one we want is the IP address of the machine:  
 ![Untitled](https://user-images.githubusercontent.com/99374038/179311470-aec2dbe0-516a-4f4c-9fb3-30b4aadd5254.png)  
 With the IP address, you can open up the Remote Desktop Connection application:  
 ![image](https://user-images.githubusercontent.com/99374038/179311591-95c101a5-b668-48aa-af97-859e1e728fbf.png)  
-You can change the display settings so that the resolution is lower than your monitors resolution to stop the VM from taking up all of your screens real estate, but if you don't mind that, then you can enter the IP address of the machine into the Computer field, and press the connect button:  
+You can change the display settings so that the resolution is lower than your monitors resolution to stop the VM from taking up all of your screen real estate, but if you don't mind that, then you can enter the IP address of the machine into the Computer field, and press the connect button:  
 ![Untitled](https://user-images.githubusercontent.com/99374038/179311802-cc34ea1e-e659-46e0-be78-6bb640f83538.png)  
 You will get a new sub window that will have blue text saying "More choices," which, when clicked, will allow you to use a different account, which is what we need to connect to the VM. Both the username and password credentials for logging into the VM are what you had set when first creating the virtual machine, so enter those values. I suggest entering the login information incorrectly at least once so you can see the failed login within the Event Viewer application inside of the VM. Event Viewer, and the failed audits for wrong username or bad passwords is what the heat map will be generated from, so this gives you a pre-emptive chance to see what those audit entries will look like. Either way, you will be given a certificate warning that you can agree to. At this point, the remainder of logging into the VM is clicking through settings, and waiting until you are presented the desktop. The settings are optional, you can opt in or not, it won't affect the lab. When you see the desktop, you should note the blue banner at the top of the screen that has the IP address of the VM on it. If you want to ensure you are using your VM and not your host machine, hover your mouse over the top middle of the screen to ensure the banner appears. 
 
@@ -131,7 +131,7 @@ You will be prompted to give a sample log file, but the log file exists inside o
 ## Record Delimiter 
 Clicking next will present you with a preview of the log files contents:  
 ![image](https://user-images.githubusercontent.com/99374038/179317994-e97475c3-c9d0-4fbb-82b0-3e201d93784b.png)  
-It should look the same, but it's always good to give things a once over to ensure everything is in working order. Once your are done reviewing, click next. 
+It should look the same, but it's always good to give things a once over to ensure everything is in working order. Once you're are done reviewing, click next. 
 
 ## Collection Paths 
 This is where we tell the custom log the location of the log file inside of the VM. We will want to select the file system type, which is Windows, and the path of the log file, which is C:\ProgramData\failed_rdp.log:  
@@ -150,7 +150,7 @@ Instead, you can run the query *SecurityEvent* to see all of the security events
 This confirms that the VM can be seen and looked at by Log Analytics Workspace, but it still needs time to sync up. 
 
 # Training Log Analytics Workspace 
-After time has passed, and running a query on the custom log returns all of the VMs log data correctly, we can begin training. Clicking on the right arrow next to the timestamp of a log will expand the details of it. The first thing listed is an ellipses that gives the option to extract fields from the raw data:  
+After time has passed, and running a query on the custom log returns all of the VMs log data correctly, we can begin training. Clicking on the right arrow next to the timestamp of a log will expand the details of it. The first thing listed is an ellipsis that gives the option to extract fields from the raw data:  
 ![image](https://user-images.githubusercontent.com/99374038/179320118-5c14db0d-267d-4fbe-b163-18ffc425616c.png)  
 To do the training, you need to highlight the value for field, such as the value that comes after the colon for latitude:  
 ![image](https://user-images.githubusercontent.com/99374038/179320425-759dd6da-6c25-4ba6-8ad6-5f99e1e82a64.png)  
@@ -166,7 +166,7 @@ A new section will be opened on the screen where you can highlight the correct v
 ![image](https://user-images.githubusercontent.com/99374038/179321192-6dd53f43-8232-4845-b9f6-1d0f2c92be33.png)  
 Clicking the Ok button should fix that entry, and hopefully others, but depending on the number of mismatched fields, you will need to continue checking each entry to ensure the correct data is being parsed for the custom field.
 
-This is the repetitive part, but you will need to go through each field and do this same training process. You can keep using the same log entry over and over for each custom field you make, but you need to ensure the data is correctly parsed or else this will negatively affect Sentinels performance. If you don't want to parse each field, you can, alternatively, only parse the longitude, latitude, country, and label, but I believe it's best to be thorough, even if it isn't always required. For optimal results, go through each field. Once that is done, you have successfully trained Log Analytics Workspace to parse the formatting structure of the log file inside of the VM, that it will automatically read for you. It will take some time for Log Analytics Workspace to fill in the fields for you, so you'll need to wait. Before the custom fields are populated, you can test the accuracy of the training by intentionally failing to log in via Remote Desktop Connection to the VM. This will create a new log entry which can be used to ensure the segments of data are placed under the correct custom field. If something is wrong, you can use the new log entry for further training. If everything is fine, we can move on to setting up Sentintel. 
+This is the repetitive part, but you will need to go through each field and do this same training process. You can keep using the same log entry over and over for each custom field you make, but you need to ensure the data is correctly parsed or else this will negatively affect Sentinels performance. If you don't want to parse each field, you can, alternatively, only parse the longitude, latitude, country, and label, but I believe it's best to be thorough, even if it isn't always required. For optimal results, go through each field. Once that is done, you have successfully trained Log Analytics Workspace to parse the formatting structure of the log file inside of the VM, that it will automatically read for you. It will take some time for Log Analytics Workspace to fill in the fields for you, so you'll need to wait. Before the custom fields are populated, you can test the accuracy of the training by intentionally failing to log in via Remote Desktop Connection to the VM. This will create a new log entry which can be used to ensure the segments of data are placed under the correct custom field. If something is wrong, you can use the new log entry for further training. If everything is fine, we can move on to setting up Sentinel. 
 
 # Azure Sentinel 
 Sentinel can be found with the search bar, and then the workspace that was made can be clicked. In here, under Threat management, you can click on Workbooks, and then add a new one:  
@@ -182,7 +182,7 @@ The query to use is:
 
 This query will summarize and get a count of based on the multiple fields, and ignore any sample data, and empty results. For this query, change any of the custom field names or the name of the custom log to match what you had used. Also, I recommend leaving the last WHERE clause in because it filters out any empty entries that may otherwise appear. When the query is returning only good results, you can change the visualization format to map view, and, optionally, change the map size to full for a better visualization experience:  
 ![Untitled](https://user-images.githubusercontent.com/99374038/179325245-7126e426-591d-474b-9b2d-fb6ec9e9633e.png)  
-On the far right side of the screen, there will be map settings. You can choose to get the displays on the map by changing the location info usage. You can either use the latitude and longitude or the country. Sometimes one works and the other doesn't, I don't know why, but you can can try switching to the other one if you have some oddities:  
+On the far-right side of the screen, there will be map settings. You can choose to get the displays on the map by changing the location info usage. You can either use the latitude and longitude or the country. Sometimes one works and the other doesn't, I don't know why, but you can try switching to the other one if you have some oddities:  
 ![Untitled](https://user-images.githubusercontent.com/99374038/179325365-c7a47d03-5280-4798-bcdc-64c9cc0fb6bc.png)  
 There is also a metrics section for the map settings where you will want to change the metric label to use the label custom field you made earlier, and the metric value should be the event count:  
 ![Untitled](https://user-images.githubusercontent.com/99374038/179325866-b1416ce5-03e2-4dca-bf57-3776af630637.png)  
@@ -200,6 +200,6 @@ Over time, the heat map will begin displaying the country of the connecting IPs,
 With that, you have completed the lab. 
 
 # Deleting Resource Groups
-Once you are satisfied with the end results, you should delete the resources built to avoid being billed for services. If the resource group is not deleted, it will eat up the free credits, and you will be charged. To prevent this you can search for resource groups, and click on the one that was made for this lab. In the Overview settings, click on the created resource group. There is a button for deleting the resource group. When pressed, a side panel will come up saying that you need to enter the name of the resource group to delete it:  
+Once you are satisfied with the end results, you should delete the resources built to avoid being billed for services. If the resource group is not deleted, it will eat up the free credits, and you will be charged. To prevent this, you can search for resource groups, and click on the one that was made for this lab. In the Overview settings, click on the created resource group. There is a button for deleting the resource group. When pressed, a side panel will come up saying that you need to enter the name of the resource group to delete it:  
 ![Untitled](https://user-images.githubusercontent.com/99374038/179326879-ce21abfd-ce22-47db-baec-bf153f271d23.png)  
 Make sure you do this before the free credits you were given are all used up. 
