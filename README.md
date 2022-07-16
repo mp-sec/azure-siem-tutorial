@@ -2,16 +2,16 @@
 
 # Forewords 
 The goal of this lab is to utilize Azure Virual Machine as a honeypot, and Azure Sentinel, and Azure Log Analytics Workspace to collect log information that will be used to create a heatmap that will display the geolocation of where potential attackers are. This is a way to get SIEM exposure and understanding without paying for software. The end result of this lab will look like this in Azure Sentinel:  
-[SCREENSHOT HERE]  
+![image](https://user-images.githubusercontent.com/99374038/179326634-e7a2f931-76dd-4fdf-9ac2-3fc2b441d7a3.png)    
 There are some things to know before starting this lab:
 - An Azure account and credit card are required. This lab utilizes the $200 worth of free credits an Azure account is given to avoid being charged, and the labs resources will be deleted afterwards to prevent any charges, so you don't have to worry about paying anything. 
 - The PowerShell script and the idea for this lab are not mine. The source of this project, and the script file can be found on Josh Madakor's GitHub page (https://github.com/joshmadakor1/Sentinel-Lab). 
 
 # Getting Azure Credits 
 When you go to *portal.azure.com*, you will be see an offer that looks like this:  
-![image](https://user-images.githubusercontent.com/99374038/179122286-01340e73-1cba-4718-9810-302413d0c030.png)  
+![Untitled](https://user-images.githubusercontent.com/99374038/179326990-c9e4ae50-4cc2-4b72-82d0-dbea8d3c86b5.png)  
 The one you will want is the Azure free trial. When you click on that, you will be offered to start the free trial:  
-![image](https://user-images.githubusercontent.com/99374038/179122353-3e6203d1-b10f-4fb8-bb0f-3a41f74ee1c7.png)  
+![Untitled](https://user-images.githubusercontent.com/99374038/179327048-f57c142a-c917-48e9-aa4f-b5a0c6b80216.png)   
 From here, you will need to enter your information, and then your credit card information. You will see some messages along the way that will let you know that you are getting the credits, so keep an eye out for those. One such message would be this one:  
 ![Untitled](https://user-images.githubusercontent.com/99374038/179122601-e1b77525-d845-4825-95a7-f4bfdb9ec136.png)  
 Once you have everything set up, the lab can be started. 
@@ -27,7 +27,7 @@ You will now need to give the appropriate settings to the VM, but first you will
 ![Untitled](https://user-images.githubusercontent.com/99374038/179133419-a4c24600-b44c-451a-8255-d7e4401976cd.png)  
 Next is to name the VM and specify which regional data centre it will be running from. The name can be whatever you want, but the region should be one that is accessible to you. While doing this lab, I did find that some regions would give me issues. If that occurs, then just choose a similar one. For me, US West 2 and US West 3 worked:  
 ![image](https://user-images.githubusercontent.com/99374038/179133703-d3a093ad-f507-4923-b1ff-7dd03548606d.png)  
-Under the administator account section, give a name and password to the VM that you will remember. When you use Remote Desktop to get access to the VM, you will need these credentials. I suggest putting them in a Notepad file. Before moving on to the disk settings, click the checkbox for the multi-tenant licensing agreement:  
+Under the administator account section, give a name and password to the VM that you will remember. When you use Remote Desktop to get access to the VM, you will need these credentials. I suggest putting them in a Notepad file. Do not use simple passwords, because this VM is a honeypot, you can expect thousands of potential connections that may try and use common passwords from files like RockYou.txt, or brute force, dictionary, or rainbow table attacks. Choose something unique to prevent this. Before moving on to the disk settings, click the checkbox for the multi-tenant licensing agreement to agree to it:  
 ![image](https://user-images.githubusercontent.com/99374038/179134179-f648e625-e58d-426c-ba39-d2f6f53387b9.png)  
 In the disk settings, you can click next. There should be no changes required. 
 
@@ -117,7 +117,7 @@ The API key that is in the file is the one that I had, so you will want your own
 You should see a value for Consumed API Requests out of 1000, as well. This tracks the total daily number of requests made, which is capped off at 1000. You can get more, but it will cost you some money to do so. It's up to your whether or not that is worth it. Either way, with your own API key copied, you should change the API key value at the top of the PowerShell script to your own, and then save the file. 
 
 ## Running the Script
-The script will go into Event Viewer and grab the IP address listed for any audit entry that has an ID of 4625. This IP address is then fed into https://ipgeolocation.io/ to get the geolocation of the IP, which is then written into a log file. This log filed is located in C:\ProgramData\, and has the name failed_rdp.log. This means the absolute path of the log is C:\ProgramData\failed_rdp.log. When the script is run, if you had intentionally failed to log in with Remote Desktop Connection, you should see some purple text at the bottom of PowerShell ISE. These lines contain the data that will be found inside of the log file, which are successfully found logs with an ID of 4625. You can check this by leaving the script running in the VM, and then failing to log into the VM again from your host machine. A new entry should appear at the bottom in the terminal. If you navigate to and open the log file itself, you should see more entries than there were at the bottom of PowerShell ISE. All preceding entries in the log are samples created automatically. These samples can be identified by their destination host value being listed as sampledata. You want to keep these because they will be used to train the Log Analytics Workspace to automate the data parsing. To avoid the sample data from affecting the heat map, they will be excluded, which will happen later. 
+The script will go into Event Viewer and grab the IP address listed for any audit entry that has an ID of 4625. This IP address is then fed into https://ipgeolocation.io/ to get the geolocation of the IP, which is then written into a log file. This log filed is located in C:\ProgramData\, and has the name failed_rdp.log. This means the absolute path of the log is C:\ProgramData\failed_rdp.log. When the script is run, if you had intentionally failed to log in with Remote Desktop Connection, you should see some purple text at the bottom of PowerShell ISE. These lines contain the data that will be found inside of the log file, which are successfully found logs with an ID of 4625. You can check this by leaving the script running in the VM, and then failing to log into the VM again from your host machine. A new entry should appear at the bottom in the terminal. If you navigate to and open the log file itself, you should see more entries than there were at the bottom of PowerShell ISE. All preceding entries in the log are samples created automatically. These samples can be identified by their destination host value being listed as sampledata. You want to keep these because they will be used to train the Log Analytics Workspace to automate the data parsing. To avoid the sample data from affecting the heat map, they will be excluded, which will happen later. I recommend not closing the VM or stopping the script. Both are required for later parts of this lab. 
 
 # Creating Custom Logs
 Back on the host machine, you want to navigate back to the Log Analytics Workspace. Inside the created workspace, there is a setting for Custom Logs:  
@@ -166,10 +166,40 @@ A new section will be opened on the screen where you can highlight the correct v
 ![image](https://user-images.githubusercontent.com/99374038/179321192-6dd53f43-8232-4845-b9f6-1d0f2c92be33.png)  
 Clicking the Ok button should fix that entry, and hopefully others, but depending on the number of mismatched fields, you will need to continue checking each entry to ensure the correct data is being parsed for the custom field.
 
-This is the repetitive part, but you will need to go through each field and do this same training process. You can keep using the same log entry over and over for each custom field you make, but you need to ensure the data is correctly parsed or else this will negatively affect Sentinels performance. If you don't want to parse each field, you can, alternatively, only parse the longitude, latitude, and country, but I believe it's best to be thorough, even if it isn't required. For optimal results, go through each field. Once that is done, you have successfully trained Log Analytics Workspace to parse the formatting structure of the log file inside of the VM, that it will automatically read for you. It will take some time for Log Analytics Workspace to fill in the fields for you, so you'll need to wait. Before the custom fields are populated, you can test the accuracy of the training by intentionally failing to log in via Remote Desktop Connection to the VM. This will create a new log entry which can be used to ensure the segments of data are placed under the correct custom field. If something is wrong, you can use the new log entry for further training. If everything is fine, we can move on to setting up Sentintel. 
+This is the repetitive part, but you will need to go through each field and do this same training process. You can keep using the same log entry over and over for each custom field you make, but you need to ensure the data is correctly parsed or else this will negatively affect Sentinels performance. If you don't want to parse each field, you can, alternatively, only parse the longitude, latitude, country, and label, but I believe it's best to be thorough, even if it isn't always required. For optimal results, go through each field. Once that is done, you have successfully trained Log Analytics Workspace to parse the formatting structure of the log file inside of the VM, that it will automatically read for you. It will take some time for Log Analytics Workspace to fill in the fields for you, so you'll need to wait. Before the custom fields are populated, you can test the accuracy of the training by intentionally failing to log in via Remote Desktop Connection to the VM. This will create a new log entry which can be used to ensure the segments of data are placed under the correct custom field. If something is wrong, you can use the new log entry for further training. If everything is fine, we can move on to setting up Sentintel. 
 
 # Azure Sentinel 
+Sentinel can be found with the search bar, and then the workspace that was made can be clicked. In here, under Threat management, you can click on Workbooks, and then add a new one:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179322049-edb7b6c9-0921-4f89-86bc-2a6dde070135.png)  
+In the top left is an edit button. Using that will let us remove the default widgets that are in there. They can be removed by clicking the ellipses and clicking Remove on all of them:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179324809-839b374f-4998-4a2e-ba19-9a18645c0f17.png)  
+Now we can add our own query:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179324909-c0c1f7a9-eea9-4be7-8df5-51c440f4bce6.png)  
+The query to use is: 
+> FAILED_RDP_WITH_GEO_CL | summarize event_count=count() by sourcehost_CF, latitude_CF, longitude_CF, country_CF, label_CF, destinationhost_CF  
+> | where destinationhost_CF != "samplehost"  
+> | where sourcehost_CF != ""  
 
+This query will summarize and get a count of based on the multiple fields, and ignore any sample data, and empty results. For this query, change any of the custom field names or the name of the custom log to match what you had used. Also, I recommend leaving the last WHERE clause in because it filters out any empty entries that may otherwise appear. When the query is returning only good results, you can change the visualization format to map view, and, optionally, change the map size to full for a better visualization experience:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179325245-7126e426-591d-474b-9b2d-fb6ec9e9633e.png)  
+On the far right side of the screen, there will be map settings. You can choose to get the displays on the map by changing the location info usage. You can either use the latitude and longitude or the country. Sometimes one works and the other doesn't, I don't know why, but you can can try switching to the other one if you have some oddities:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179325365-c7a47d03-5280-4798-bcdc-64c9cc0fb6bc.png)  
+There is also a metrics section for the map settings where you will want to change the metric label to use the label custom field you made earlier, and the metric value should be the event count:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179325866-b1416ce5-03e2-4dca-bf57-3776af630637.png)  
+You can now apply the map settings. If you intentionally failed to login, you will see a location marked on the map relative to where the geolocation for the IP is. The API is fairly accurate, so the location on the map should be pretty close. There will also be a country and IP listed below the map. At the very bottom of the map settings is a button named Save and Close. Once you have the map settings right, you can click this button to close the settings. You can now save the settings for the workbook, give the workbook a title, and then select a location:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179326022-1ed61de9-5c16-47c8-98c8-c8bc52712bba.png)  
+With that, you can click the Done Editing button. I suggest you set the map to auto refresh. This will keep the map relatively up to date without your intervention:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179326397-e3d07a01-c130-4396-bdb7-c636da1885c3.png)  
+For the refreshing to gather new data, the PowerShell script inside the VM, and the VM itself, need to be running. 
+
+# Heat Map
+Over time, new entries will begin appearing on the heat map. This is because the honeypot has been found. For me, it looked like this:  
+![image](https://user-images.githubusercontent.com/99374038/179326614-bd8466a9-5e6f-4f66-b222-c50eb0065226.png)  
+Over time, the heat map will begin displaying the country of the connecting IPs, and be updated for you. This may be limited by the number of free API requests that you have, but if you run it over a couple of days, the number of instances on the map will grow. 
+
+With that, you have completed the lab. 
 
 # Deleting Resource Groups
-If the resource group is not deleted, it will eat up the free credits and you will be charged. To prevent this you can search for resource groups, and click on the one that was made for this lab. 
+Once you are satisfied with the end results, you should delete the resources built to avoid being billed for services. If the resource group is not deleted, it will eat up the free credits, and you will be charged. To prevent this you can search for resource groups, and click on the one that was made for this lab. In the Overview settings, click on the created resource group. There is a button for deleting the resource group. When pressed, a side panel will come up saying that you need to enter the name of the resource group to delete it:  
+![Untitled](https://user-images.githubusercontent.com/99374038/179326879-ce21abfd-ce22-47db-baec-bf153f271d23.png)  
+Make sure you do this before the free credits you were given are all used up. 
